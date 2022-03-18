@@ -1,3 +1,5 @@
+#!/home/ec2-user/venv/bin/python3
+
 import os
 import sys
 import time
@@ -8,6 +10,16 @@ import boto3
 def put_cloudwatch_logs(logs):
     AWS_REGION = "eu-north-1"
     client = boto3.client('cloudwatch', region_name=AWS_REGION)
+
+    if logs[1] == 200:
+        status_code = 1
+        print("Status Code:", logs[1])
+    elif logs[1] == 401:
+        status_code = 0.5
+        print("Error 401, unauthorized")
+    else:
+        status_code = 0
+        print("Status Code:", logs[1])
 
     response = client.put_metric_data(
         Namespace='Bring API Status',
@@ -20,7 +32,7 @@ def put_cloudwatch_logs(logs):
                         'Value': str(logs[1])
                     }
                 ],
-                'Value': 1,
+                'Value': status_code,
                 'Unit': 'Count'
             },
             {
@@ -41,17 +53,17 @@ def put_cloudwatch_logs(logs):
 
 def get_status(url):
     """
-
+    Get the statuscode and response from the specified URL.
     :param url:
     :return:
     """
 
-    if not "Mybring-API-Uid" and "Mybring-API-Key" in os.environ:
-        sys.exit("❌ Error! Ensure the environemnt variables 'Mybring-API-Uid' and 'Mybring-API-Key' are set!")
+    if not "MYBRINGAPIUID" and "MYBRINGAPIKEY" in os.environ:
+        sys.exit("❌ Error! Ensure the environemnt variables 'MYBRINGAPIUID' and 'MYBRINGAPIKEY' are set!")
 
     headers = {
-        "X-Mybring-API-Uid": os.getenv('Mybring-API-Uid'),
-        "X-Mybring-API-Key": os.getenv('Mybring-API-Key')
+        "X-Mybring-API-Uid": os.getenv('MYBRINGAPIUID'),
+        "X-Mybring-API-Key": os.getenv('MYBRINGAPIKEY')
     }
     params = {"address_type": "street", "street_or_place": "slottsplassen"}
     r = requests.get(url, headers=headers, params=params)
@@ -81,12 +93,6 @@ if __name__ == '__main__':
 
     check_status = get_status("https://api-new.bring.com/address/api/no/addresses")
     print(list(check_status))
-
-    # Debug
-    print("Range:")
-    for i in range(0,4):
-        print(i, type(check_status[i]), check_status)
-
 
     put_cloudwatch_logs(check_status)
 
