@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import requests
 import boto3
@@ -44,6 +45,10 @@ def get_status(url):
     :param url:
     :return:
     """
+
+    if not "Mybring-API-Uid" and "Mybring-API-Key" in os.environ:
+        sys.exit("❌ Error! Ensure the environemnt variables 'Mybring-API-Uid' and 'Mybring-API-Key' are set!")
+
     headers = {
         "X-Mybring-API-Uid": os.getenv('Mybring-API-Uid'),
         "X-Mybring-API-Key": os.getenv('Mybring-API-Key')
