@@ -8,7 +8,12 @@ Pushes the response to Cloudwatch.
 
 ## Environment Variables
 The following environment variables are required to be set:
-- `Mybring-API-Uid` This should be your email address from MyBring
-- `Mybring-API-Key` Your API key that you can get from your profile in MyBring
+- `MYBRINGAPIUID` This should be your email address from MyBring
+- `MYBRINGAPIKEY` Your API key that you can get from your profile in MyBring
 
-**NOTE: Additionally, for local development and testing, you need to ensure you have AWS credentials loaded!**
+
+### Slack Notifications
+If you want notifications sent to Slack when a status dips below a certain treshold, create an SNS topic that CloudWatch will send an alarm to, then deploy the [slack_lambda.py](slack_lambda.py) to send the alert to Slack. You'll need a Slack Webhook URL for this to work. 
+
+
+**NOTE: Additionally, for local development and testing, you need to ensure you have AWS credentials loaded in your IDE or in your PATH!**
