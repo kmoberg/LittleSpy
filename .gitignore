@@ -13,3 +13,7 @@ gen
 # Python Project
 *.csv
 *.psd
+
+.DS_Store
+.coverage
+docker/
