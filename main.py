@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import pprint
@@ -5,16 +6,7 @@ from dataclasses import dataclass
 
 import requests
 
-
-@dataclass
-class RequestObject:
-    status_code: int
-    request_size: int
-    request_headers: dict
-    request_body: dict
-    response_size: int
-    response_time: float
-    headers: dict
+from models.checks import RequestObject
 
 
 def check_url(url, request_headers, request_body):
@@ -26,7 +18,9 @@ def check_url(url, request_headers, request_body):
                              request_body=request_body,
                              response_size=r.__sizeof__(),
                              response_time=r.elapsed.total_seconds(),
-                             headers=dict(r.headers))
+                             headers=dict(r.headers),
+                             timestamp=datetime.datetime.now().timestamp()
+                             )
     except requests.ConnectTimeout:
         return "Connection Timeout"
     except requests.ConnectionError:
@@ -34,13 +28,11 @@ def check_url(url, request_headers, request_body):
 
 
 def main():
-
     url = "https://nyartcc.org"
     request_headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
     }
     request_body = {"key": "value"}
-
 
     check = check_url(url, request_headers, request_body)
 
@@ -51,6 +43,7 @@ def main():
     logging.debug(f'Response Size: {check.response_size}')
     logging.debug(f'Response Time: {check.response_time}')
     logging.debug(json.dumps(check.headers, indent=4))
+    logging.debug(f'Timestamp: {datetime.datetime.fromtimestamp(check.timestamp)}')
 
 
 if __name__ == '__main__':
