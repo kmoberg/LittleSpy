@@ -1,4 +1,6 @@
-# Skjema - Bring API Status Checker
+![LittleSpy Banner](/Users/kmoberg/Projects/02-Origo/skjema-statuschecker/.github/github_banner.png)
+
+# LittleSpy.io
 Simple script that checks a specific address against the Bring API to check if it is up or not.
 Pushes the response to Cloudwatch.
 
