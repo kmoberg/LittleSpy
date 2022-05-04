@@ -1,98 +1,79 @@
-#!/home/ec2-user/venv/bin/python3
-
+import datetime
+import json
+import logging
 import os
-import sys
-import time
+
 import requests
-import boto3
+
+from models.checks import RequestObject
 
 
-def put_cloudwatch_logs(logs):
-    AWS_REGION = "eu-north-1"
-    client = boto3.client('cloudwatch', region_name=AWS_REGION)
-
-    if logs[1] == 200:
-        status_code = 1
-        print("Status Code:", logs[1])
-    elif logs[1] == 401:
-        status_code = 0.5
-        print("Error 401, unauthorized")
-    else:
-        status_code = 0
-        print("Status Code:", logs[1])
-
-    response = client.put_metric_data(
-        Namespace='Bring API Status',
-        MetricData=[
-            {
-                'MetricName': 'Status',
-                'Dimensions': [
-                    {
-                        'Name': 'Status Code',
-                        'Value': str(logs[1])
-                    }
-                ],
-                'Value': status_code,
-                'Unit': 'Count'
-            },
-            {
-                'MetricName': 'Response Time',
-                'Dimensions': [
-                    {
-                        'Name': 'Response Time',
-                        'Value': 'Seconds'
-                    }
-                ],
-                'Value': logs[2],
-                'Unit': 'Seconds'
-            }
-        ]
-    )
-    print(response)
-
-
-def get_status(url):
-    """
-    Get the statuscode and response from the specified URL.
-    :param url:
-    :return:
-    """
-
-    if not "MYBRINGAPIUID" and "MYBRINGAPIKEY" in os.environ:
-        sys.exit("❌ Error! Ensure the environemnt variables 'MYBRINGAPIUID' and 'MYBRINGAPIKEY' are set!")
-
-    headers = {
-        "X-Mybring-API-Uid": os.getenv('MYBRINGAPIUID'),
-        "X-Mybring-API-Key": os.getenv('MYBRINGAPIKEY')
-    }
-    params = {"address_type": "street", "street_or_place": "slottsplassen"}
-    r = requests.get(url, headers=headers, params=params)
-
-    response_content = r.content.decode("utf-8")
-
-    print(r.status_code, r.elapsed.microseconds/10000000)
-    current_time = time.time()
-
-    # For local development and debugging, store a local CSV file.
+def check_url(url, request_headers, request_body):
     try:
-        f = open('statistics.csv', 'a')
+        r = requests.get(url, headers=request_headers, data=request_body)
+        return RequestObject(
+            status_code=r.status_code,
+            request_size=r.__sizeof__(),
+            request_headers=request_headers,
+            request_body=request_body,
+            response_size=r.__sizeof__(),
+            response_time=r.elapsed.total_seconds(),
+            headers=dict(r.headers),
+            timestamp=datetime.datetime.now().timestamp(),
+        )
+    except requests.ConnectTimeout:
+        return "Connection Timeout"
+    except requests.ConnectionError:
+        return "Connection Error"
 
-        # Timestamp, Status_Code, Response_Duration, Response
-        text = "{},{},{},{}\n".format(current_time, r.status_code, r.elapsed.seconds, response_content)
-        try:
-            f.write(text)
-        finally:
-            f.close()
-    except IOError as e:
-        print("Oops!", e)
 
-    return current_time, r.status_code, r.elapsed.microseconds/10000000, response_content
+def get_database():
+    from pymongo import MongoClient
+
+    mongo_user = os.environ.get("MONGODB_USER")
+    mongo_password = os.environ.get("MONGODB_PASSWORD")
+    mongo_host = os.environ.get("MONGODB_URI")
+    mongo_port = os.environ.get("MONGODB_PORT")
+    mongo_db = os.environ.get("MONGODB_DATABASE")
+
+    CONNECTION_STRING = (
+        f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}"
+    )
+
+    client = MongoClient(CONNECTION_STRING)
+
+    return client[mongo_db]
 
 
-if __name__ == '__main__':
+def main():
 
-    check_status = get_status("https://api-new.bring.com/address/api/no/addresses")
-    print(list(check_status))
+    url = "https://nyartcc.org"
+    request_headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/81.0.4044.138 Safari/537.36",
+        "url": url,
+    }
+    request_body = {"key": "value"}
 
-    put_cloudwatch_logs(check_status)
+    check = check_url(url, request_headers, request_body)
 
+    logging.debug(f"Status Code: {check.status_code}")
+    logging.debug(f"Request Size: {check.request_size}")
+    logging.debug(f"Request Headers: {check.request_headers}")
+    logging.debug(f"Request Body: {check.request_body}")
+    logging.debug(f"Response Size: {check.response_size}")
+    logging.debug(f"Response Time: {check.response_time}")
+    logging.debug(json.dumps(check.response_headers, indent=4))
+    logging.debug(f"Timestamp: {datetime.datetime.fromtimestamp(check.timestamp)}")
+    logging.debug(f'Domain: {check.request_headers["url"]}')
+
+    check.insert_data()
+
+
+if __name__ == "__main__":
+    level = logging.DEBUG
+    fmt = "[%(levelname)s] %(asctime)s - %(message)s"
+    logging.basicConfig(level=level, format=fmt)
+
+    main()

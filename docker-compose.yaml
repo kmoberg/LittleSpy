@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  # Application: LittleSpy
+  #little_spy:
+  #  build: .
+
+  mongodb-local:
+    image: "mongo:latest"
+    restart: always
+    container_name: mongodb-local
+    ports:
+      - "27017:27017"
+    volumes:
+      - "./docker/mongodb:/data/db"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
