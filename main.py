@@ -64,7 +64,7 @@ def main():
     logging.debug(f"Request Body: {check.request_body}")
     logging.debug(f"Response Size: {check.response_size}")
     logging.debug(f"Response Time: {check.response_time}")
-    logging.debug(json.dumps(check.headers, indent=4))
+    logging.debug(json.dumps(check.response_headers, indent=4))
     logging.debug(f"Timestamp: {datetime.datetime.fromtimestamp(check.timestamp)}")
     logging.debug(f'Domain: {check.request_headers["url"]}')
 

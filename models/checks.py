@@ -10,7 +10,7 @@ class RequestObject:
     request_body: dict
     response_size: int
     response_time: float
-    headers: dict
+    response_headers: dict
     timestamp: float
     id: int = field(default_factory=count().__next__)
 
@@ -27,7 +27,7 @@ class RequestObject:
         request_body = self.request_body
         response_size = self.response_size
         response_time = self.response_time
-        headers = self.headers
+        headers = self.response_headers
         timestamp = self.timestamp
         domain = self.request_headers["url"]
 
@@ -42,7 +42,7 @@ class RequestObject:
             "request_body": request_body,
             "response_size": response_size,
             "response_time": response_time,
-            "headers": headers,
+            "response_headers": headers,
             "timestamp": timestamp,
             "url": domain,
         }
