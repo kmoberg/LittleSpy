@@ -1,16 +1,17 @@
 version: '3.9'
 services:
   # Application: LittleSpy
-  little_spy:
-    build: .
+  #little_spy:
+  #  build: .
 
-  # Database:
-  dynamodb-local:
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
-    image: "amazon/dynamodb-local:latest"
-    container_name: dynamodb-local
+  mongodb-local:
+    image: "mongo:latest"
+    restart: always
+    container_name: mongodb-local
     ports:
-      - "8000:8000"
+      - "27017:27017"
     volumes:
-      - "./docker/dynamodb:/home/dynamodblocal/data"
-    working_dir: /home/dynamodblocal
+      - "./docker/mongodb:/data/db"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
